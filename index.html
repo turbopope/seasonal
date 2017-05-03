@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="charset" content="utf-8">
+    <title>Seasonal</title>
+
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.2/css/materialize.min.css" media="screen,projection" />
+    <!--Import Google Icon Font-->
+    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script type="text/javascript">
+        // http://www.regional-saisonal.de/saisonkalender-gemuese
+
+        var data = {
+            "eggplant": {
+                "ndbno": 11209,
+                "germany": {
+                    "name":      "Aubergine",
+                    "january":   "",
+                    "february":  "",
+                    "march":     "",
+                    "april":     "",
+                    "may":       "",
+                    "june":      "",
+                    "july":      "fresh",
+                    "august":    "fresh",
+                    "september": "fresh",
+                    "october":   "fresh",
+                    "november":  "",
+                    "december":  ""
+                }
+            },
+            "califlower": {
+                "ndbno": 11135,
+                "germany": {
+                    "name":      "Blumenkohl",
+                    "january":   "",
+                    "february":  "",
+                    "march":     "",
+                    "april":     "",
+                    "may":       "fresh",
+                    "june":      "fresh",
+                    "july":      "fresh",
+                    "august":    "fresh",
+                    "september": "fresh",
+                    "october":   "fresh",
+                    "november":  "",
+                    "december":  ""
+                }
+            },
+            "common_bean": {
+                "ndbno": null,
+                "germany": {
+                    "name":      "Grüne Bohnen",
+                    "january":   "",
+                    "february":  "",
+                    "march":     "",
+                    "april":     "",
+                    "may":       "",
+                    "june":      "",
+                    "july":      "fresh",
+                    "august":    "fresh",
+                    "september": "fresh",
+                    "october":   "fresh",
+                    "november":  "",
+                    "december":  ""
+                }
+            },
+            "broad_bean": {
+                "ndbno": 16052,
+                "germany": {
+                    "name":      "Dicke Bohnen",
+                    "january":   "",
+                    "february":  "",
+                    "march":     "",
+                    "april":     "",
+                    "may":       "",
+                    "june":      "fresh",
+                    "july":      "fresh",
+                    "august":    "fresh",
+                    "september": "",
+                    "october":   "",
+                    "november":  "",
+                    "december":  ""
+                }
+            },
+            "broccoli": {
+                "ndbno": 11090,
+                "germany": {
+                    "name":      "Brokkoli",
+                    "january":   "",
+                    "february":  "",
+                    "march":     "",
+                    "april":     "",
+                    "may":       "",
+                    "june":      "fresh",
+                    "july":      "fresh",
+                    "august":    "fresh",
+                    "september": "fresh",
+                    "october":   "fresh",
+                    "november":  "",
+                    "december":  ""
+                }
+            },
+            "rutabaga": {
+                "ndbno": 11435,
+                "germany": {
+                    "name":      "Steckrübe",
+                    "january":   "stored",
+                    "february":  "stored",
+                    "march":     "stored",
+                    "april":     "stored",
+                    "may":       "",
+                    "june":      "",
+                    "july":      "",
+                    "august":    "fresh",
+                    "september": "fresh",
+                    "october":   "fresh",
+                    "november":  "fresh",
+                    "december":  "fresh"
+                }
+            },
+            // "": {
+            //     "ndbno": ,
+            //     "germany": {
+            //         "name":      "",
+            //         "january":   "",
+            //         "february":  "",
+            //         "march":     "",
+            //         "april":     "",
+            //         "may":       "",
+            //         "june":      "",
+            //         "july":      "",
+            //         "august":    "",
+            //         "september": "",
+            //         "october":   "",
+            //         "november":  "",
+            //         "december":  ""
+            //     }
+            // },
+        }
+    </script>
+
+    <script type="text/javascript">
+        function getHash(){
+            return window.location.hash.substr(1)
+        }
+
+        function setHash(hash) {
+            // console.log("Setting hash: " + hash)
+            if(history.pushState) {
+                history.pushState(null, null, `#${hash}`);
+            } else {
+                location.hash = `#${hash}`;
+            }
+            // console.dir(history)
+        }
+
+        function setState(location, month) {
+            setHash(`${location}-${month}`);
+        }
+
+        function food(id, location) {
+            // return '<li class="collection-item">' + data[id][location]['name'] + '</li>';
+            let localizedName = data[id][location]['name'];
+            return `
+                <li data-food="${id}">
+                    <div class="collapsible-header"><i class="material-icons">filter_drama</i>${localizedName}</div>
+                    <div class="collapsible-body">${preloader()}</div>
+                </li>
+            `;
+        }
+
+        function preloader() {
+            return `
+                <div class="preloader-wrapper small active">
+                    <div class="spinner-layer spinner-green-only">
+                    <div class="circle-clipper left">
+                        <div class="circle"></div>
+                    </div><div class="gap-patch">
+                         <div class="circle"></div>
+                    </div><div class="circle-clipper right">
+                        <div class="circle"></div>
+                    </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getExtract(title, callback) {
+            $.ajax( {
+                url: 'https://en.wikipedia.org/w/api.php',
+                data: {
+                    format: 'json',
+                    action: 'query',
+                    prop: 'extracts',
+                    exintro: '',
+                    titles: title,
+                    origin: '*',
+                    redirects: 1
+                },
+                dataType: 'json',
+                type: 'GET',
+                headers: {
+                    'Api-User-Agent': 'Example/1.0',
+                    // 'Origin': 'http://146.52.196.56/'
+                },
+                success: data => {
+                    if (!data.query) { callback(data, null); return; };
+                    const resultKeys = Object.getOwnPropertyNames(data.query.pages);
+                    const firstKey = resultKeys[0];
+                    extract = data.query.pages[firstKey].extract;
+                    if (extract) {
+                        callback(null, extract);
+                    } else {
+                        callback(`${title} not found`);
+                    }
+                },
+                error: (jqXHR, textStatus, errorThrown) => {
+                    throw errorThrown;
+                }
+            } );
+        }
+
+        var months = [
+            "january",
+            "february",
+            "march",
+            "april",
+            "may",
+            "june",
+            "july",
+            "august",
+            "september",
+            "october",
+            "november",
+            "december"
+        ];
+
+        window.addEventListener('popstate', function(event) {
+            let month = getHash().split('-')[1];
+            $('ul.tabs').tabs('select_tab', month);
+        }, false);
+
+        window.onload = () => {
+            $('ul.tabs').tabs({
+                onShow: tab => {
+                    let month = tab['selector'].substr(1);
+                    setState(location, month);
+                }
+            });
+
+            $('.collapsible').collapsible({
+                onOpen: element => {
+                    let foodID = element[0]['dataset']['food'];
+                    getExtract(foodID, (err, extract) => {
+                        if (err) {
+                            $(element).find('.collapsible-body').html(`<span class="red-text">${err}</span>`);
+                            console.error(err);
+                        } else {
+                            $(element).find('.collapsible-body').html(`<span>${extract}</span>`);
+                        }
+                    });
+                }
+            });
+
+
+            var query = getHash().split('-');
+
+            var location = query[0] || 'germany'; // TODO: Get location from IP address
+            let month =    query[1] || months[(new Date()).getMonth()].toLowerCase();
+
+            if (!('location' in query) || !('month' in query)) {
+                setState(location, month);
+            }
+
+
+            $('ul.tabs').tabs('select_tab', month);
+
+            // Populate Lists
+            for (let month of months) {
+                var foods = _.pickBy(data, food => {
+                    var availability = food[location][month];
+                    return availability == 'fresh' || availability == 'stored';
+                });
+
+                for (var foodID in foods) {
+                    $(`#${month} ul`).append(food(foodID, location));
+                }
+            }
+        };
+    </script>
+
+    <style media="screen">
+        .flat {
+            margin-bottom: 0;
+        }
+
+        nav i.material-icons {
+            display: inline-block;
+            font-size: 1rem;
+        }
+
+        .material-icons {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav-extended green">
+        <div class="container">
+            <div class="nav-wrapper">
+                <a href="index.html" class="brand-logo center">Seasonal Foods</a>
+                <ul id="nav-mobile" class="left hide-on-med-and-down">
+                    <li><a href="#why">Why Tho?</a></li>
+                    <li><a href="http://www.regional-saisonal.de/saisonkalender-gemuese">Sources <i class="tiny material-icons">open_in_new</i></a></li>
+                    <li><a href="https://github.com/turbopope/seasonal">Source <i class="tiny material-icons">open_in_new</i></a></li>
+                </ul>
+            </div>
+
+            <div class="nav-content">
+                <ul class="tabs tabs-transparent tabs-fixed-width">
+                    <li class="tab col s1"><a href="#january">JAN</a></li>
+                    <li class="tab col s1"><a href="#february">FEB</a></li>
+                    <li class="tab col s1"><a href="#march">MAR</a></li>
+                    <li class="tab col s1"><a href="#april">APR</a></li>
+                    <li class="tab col s1"><a href="#may">MAY</a></li>
+                    <li class="tab col s1"><a href="#june">JUN</a></li>
+                    <li class="tab col s1"><a href="#july">JUL</a></li>
+                    <li class="tab col s1"><a href="#august">AUG</a></li>
+                    <li class="tab col s1"><a href="#september">SEP</a></li>
+                    <li class="tab col s1"><a href="#october">OCT</a></li>
+                    <li class="tab col s1"><a href="#november">NOV</a></li>
+                    <li class="tab col s1"><a href="#december">DEC</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+
+        <div id="january" class="col s12">
+            <h1>January</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="february" class="col s12">
+            <h1>February</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="march" class="col s12">
+            <h1>March</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="april" class="col s12">
+            <h1>April</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="may" class="col s12">
+            <h1>May</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="june" class="col s12">
+            <h1>June</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="july" class="col s12">
+            <h1>July</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="august" class="col s12">
+            <h1>August</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="september" class="col s12">
+            <h1>September</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="october" class="col s12">
+            <h1>October</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="november" class="col s12">
+            <h1>November</h1>
+            <ul class="collapsible" data-collapsible="accordion"></ul>
+        </div>
+        <div id="december" class="col s12">
+            <h1>December</h1>
+            <ul class="collapsible" data-collapsible="accordion">
+        </div>
+
+        <h2>Why Tho?</h2>
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        </p>
+
+    </div>
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.2/js/materialize.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.10/URI.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+</body>
+
+</html>
