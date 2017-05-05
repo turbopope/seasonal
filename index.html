@@ -6,7 +6,7 @@
     <title>Seasonal</title>
 
     <!--Import materialize.css-->
-    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.2/css/materialize.min.css" media="screen,projection" />
+    <link type="text/css" rel="stylesheet" href="bower_components/materialize/dist/css/materialize.min.css" media="screen,projection" />
     <!--Import Google Icon Font-->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
@@ -147,22 +147,39 @@
     </script>
 
     <script type="text/javascript">
-        function getHash(){
-            return window.location.hash.substr(1)
+        var months = [
+            "january",
+            "february",
+            "march",
+            "april",
+            "may",
+            "june",
+            "july",
+            "august",
+            "september",
+            "october",
+            "november",
+            "december"
+        ];
+
+        function getState() {
+            return history.state;
         }
 
-        function setHash(hash) {
-            // console.log("Setting hash: " + hash)
-            if(history.pushState) {
-                history.pushState(null, null, `#${hash}`);
-            } else {
-                location.hash = `#${hash}`;
-            }
-            // console.dir(history)
+        function pushState(location, month) {
+            console.log(`Pushing new state ${JSON.stringify({location, month})}`)
+            const hash = `${location}-${month}`;
+            history.pushState({location, month}, null, `#${hash}`);
         }
 
-        function setState(location, month) {
-            setHash(`${location}-${month}`);
+        function replaceState(location, month) {
+            console.log(`Setting current state to ${JSON.stringify({location, month})}`)
+            const hash = `${location}-${month}`;
+            history.replaceState({location, month}, null, `#${hash}`);
+        }
+
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
         }
 
         function food(id, location) {
@@ -190,6 +207,24 @@
                     </div>
                 </div>
             `;
+        }
+
+        function renderMonth(location, month) {
+            let foodList = '';
+            var foods = _.pickBy(data, food => {
+                var availability = food[location][month];
+                return availability == 'fresh' || availability == 'stored';
+            });
+            for (var foodID in foods) {
+                foodList += food(foodID, location);
+            }
+
+            $('#food-container').html(`
+                <div id="${month}" class="col s12">
+                    <h1>${capitalizeFirstLetter(month)}</h1>
+                    <ul class="collapsible" data-collapsible="accordion">${foodList}</ul>
+                </div>
+            `);
         }
 
         function getExtract(title, callback) {
@@ -227,34 +262,13 @@
             } );
         }
 
-        var months = [
-            "january",
-            "february",
-            "march",
-            "april",
-            "may",
-            "june",
-            "july",
-            "august",
-            "september",
-            "october",
-            "november",
-            "december"
-        ];
-
         window.addEventListener('popstate', function(event) {
-            let month = getHash().split('-')[1];
-            $('ul.tabs').tabs('select_tab', month);
+            let state = getState();
+            console.log(`popstate with state ${JSON.stringify(state)}`);
+            renderMonth(state.month);
         }, false);
 
         window.onload = () => {
-            $('ul.tabs').tabs({
-                onShow: tab => {
-                    let month = tab['selector'].substr(1);
-                    setState(location, month);
-                }
-            });
-
             $('.collapsible').collapsible({
                 onOpen: element => {
                     let foodID = element[0]['dataset']['food'];
@@ -269,30 +283,32 @@
                 }
             });
 
+            $('.collapsible').collapsible();
 
-            var query = getHash().split('-');
+            var state = getState();
+            console.log(`Loaded window with state ${JSON.stringify(state)}`);
 
-            var location = query[0] || 'germany'; // TODO: Get location from IP address
-            let month =    query[1] || months[(new Date()).getMonth()].toLowerCase();
+            const currentMonth = months[(new Date()).getMonth()].toLowerCase();
+            let location = state ? (state.location || 'germany') : 'germany'; // TODO: Get location from IP address
+            let month    = state ? (state.month || currentMonth) : currentMonth;
 
-            if (!('location' in query) || !('month' in query)) {
-                setState(location, month);
-            }
+            replaceState(location, month);
 
+            $(`#month-select option[value=${month}]`).prop('selected', true)
+            $(`#location-select option[value=${location}]`).prop('selected', true)
+            $('select').material_select();
 
-            $('ul.tabs').tabs('select_tab', month);
+            $('#month-select').change(function() {
+                let month = $(this).val();
+                renderMonth(location, month);
+            });
 
-            // Populate Lists
-            for (let month of months) {
-                var foods = _.pickBy(data, food => {
-                    var availability = food[location][month];
-                    return availability == 'fresh' || availability == 'stored';
-                });
+            $('#location-select').change(function() {
+                let location = $(this).val();
+                renderMonth(location, month);
+            });
 
-                for (var foodID in foods) {
-                    $(`#${month} ul`).append(food(foodID, location));
-                }
-            }
+            renderMonth(location, month);
         };
     </script>
 
@@ -312,13 +328,23 @@
             justify-content: center;
             vertical-align: middle;
         }
+
+        nav .input-field label {
+            color: white;
+        }
+
+        nav .select-wrapper input.select-dropdown {
+            border-bottom: 1px solid white;
+        }
     </style>
 </head>
 
 <body>
-    <nav class="nav-extended green">
+    <nav class="green nav-extended">
         <div class="container">
             <div class="nav-wrapper">
+                <div class="row">
+
                 <a href="index.html" class="brand-logo center">Seasonal Foods</a>
                 <ul id="nav-mobile" class="left hide-on-med-and-down">
                     <li><a href="https://lifehacker.com/why-eating-seasonally-and-locally-is-better-for-you-an-1563025065">Why Tho? <i class="tiny material-icons">open_in_new</i></a></li>
@@ -326,83 +352,49 @@
                     <li><a href="https://github.com/turbopope/seasonal">Source <i class="tiny material-icons">open_in_new</i></a></li>
                 </ul>
             </div>
-
+            </div>
             <div class="nav-content">
-                <ul class="tabs tabs-transparent tabs-fixed-width">
-                    <li class="tab col s1"><a href="#january">JAN</a></li>
-                    <li class="tab col s1"><a href="#february">FEB</a></li>
-                    <li class="tab col s1"><a href="#march">MAR</a></li>
-                    <li class="tab col s1"><a href="#april">APR</a></li>
-                    <li class="tab col s1"><a href="#may">MAY</a></li>
-                    <li class="tab col s1"><a href="#june">JUN</a></li>
-                    <li class="tab col s1"><a href="#july">JUL</a></li>
-                    <li class="tab col s1"><a href="#august">AUG</a></li>
-                    <li class="tab col s1"><a href="#september">SEP</a></li>
-                    <li class="tab col s1"><a href="#october">OCT</a></li>
-                    <li class="tab col s1"><a href="#november">NOV</a></li>
-                    <li class="tab col s1"><a href="#december">DEC</a></li>
-                </ul>
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <select id="month-select" class="icons">
+                            <option value="january">January</option>
+                            <option value="february">February</option>
+                            <option value="march">March</option>
+                            <option value="april">April</option>
+                            <option value="may">May</option>
+                            <option value="june">June</option>
+                            <option value="july">July</option>
+                            <option value="august">August</option>
+                            <option value="september">September</option>
+                            <option value="october">October</option>
+                            <option value="november">November</option>
+                            <option value="dezember">Dezember</option>
+                        </select>
+                        <label>Month</label>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <select id="location-select" class="icons">
+                            <option value="germany">Germany</option>
+                        </select>
+                        <label>Location</label>
+                    </div>
+                </div>
             </div>
         </div>
-    </nav>
-    <div class="container">
 
-        <div id="january" class="col s12">
-            <h1>January</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="february" class="col s12">
-            <h1>February</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="march" class="col s12">
-            <h1>March</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="april" class="col s12">
-            <h1>April</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="may" class="col s12">
-            <h1>May</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="june" class="col s12">
-            <h1>June</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="july" class="col s12">
-            <h1>July</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="august" class="col s12">
-            <h1>August</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="september" class="col s12">
-            <h1>September</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="october" class="col s12">
-            <h1>October</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="november" class="col s12">
-            <h1>November</h1>
-            <ul class="collapsible" data-collapsible="accordion"></ul>
-        </div>
-        <div id="december" class="col s12">
-            <h1>December</h1>
-            <ul class="collapsible" data-collapsible="accordion">
-        </div>
+    </nav>
+
+
+    <div id="food-container" class="container">
+
+        <!-- This gets populated automatically -->
 
     </div>
 
-    <!--Import jQuery before materialize.js-->
-    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.2/js/materialize.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.10/URI.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="bower_components/materialize/dist/js/materialize.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.10/URI.min.js"></script> -->
+    <script src="bower_components/lodash/dist/lodash.min.js"></script>
 </body>
 
 </html>
