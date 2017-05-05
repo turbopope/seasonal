@@ -1,0 +1,24 @@
+{
+  "name": "seasonal",
+  "homepage": "https://github.com/turbopope/seasonal",
+  "authors": [
+    "turbopope <mbrack@uni-koblenz.de>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "materialize": "^0.98.2",
+    "jquery": "^3.2.1",
+    "lodash": "^4.17.4",
+    "material-design-icons": "^3.0.1"
+  }
+}
