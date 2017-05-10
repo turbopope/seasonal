@@ -10,6 +10,11 @@
     <!--Import Google Icon Font-->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="bower_components/materialize/dist/js/materialize.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.10/URI.min.js"></script> -->
+    <script src="bower_components/lodash/dist/lodash.min.js"></script>
+
     <!--Let browser know website is optimized for mobile-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -225,6 +230,20 @@
                     <ul class="collapsible" data-collapsible="accordion">${foodList}</ul>
                 </div>
             `);
+
+            $('.collapsible').collapsible({
+                onOpen: element => {
+                    let foodID = element[0]['dataset']['food'];
+                    getExtract(foodID, (err, extract) => {
+                        if (err) {
+                            $(element).find('.collapsible-body').html(`<span class="red-text">${err}</span>`);
+                            console.error(err);
+                        } else {
+                            $(element).find('.collapsible-body').html(`<span>${extract}</span>`);
+                        }
+                    });
+                }
+            });
         }
 
         function getExtract(title, callback) {
@@ -268,23 +287,7 @@
             renderMonth(state.month);
         }, false);
 
-        window.onload = () => {
-            $('.collapsible').collapsible({
-                onOpen: element => {
-                    let foodID = element[0]['dataset']['food'];
-                    getExtract(foodID, (err, extract) => {
-                        if (err) {
-                            $(element).find('.collapsible-body').html(`<span class="red-text">${err}</span>`);
-                            console.error(err);
-                        } else {
-                            $(element).find('.collapsible-body').html(`<span>${extract}</span>`);
-                        }
-                    });
-                }
-            });
-
-            $('.collapsible').collapsible();
-
+        $(document).ready(function() {
             var state = getState();
             console.log(`Loaded window with state ${JSON.stringify(state)}`);
 
@@ -292,7 +295,7 @@
             let location = state ? (state.location || 'germany') : 'germany'; // TODO: Get location from IP address
             let month    = state ? (state.month || currentMonth) : currentMonth;
 
-            replaceState(location, month);
+            // replaceState(location, month);
 
             $(`#month-select option[value=${month}]`).prop('selected', true)
             $(`#location-select option[value=${location}]`).prop('selected', true)
@@ -309,7 +312,7 @@
             });
 
             renderMonth(location, month);
-        };
+        });
     </script>
 
     <style media="screen">
@@ -391,10 +394,7 @@
 
     </div>
 
-    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="bower_components/materialize/dist/js/materialize.min.js"></script>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.10/URI.min.js"></script> -->
-    <script src="bower_components/lodash/dist/lodash.min.js"></script>
+
 </body>
 
 </html>
