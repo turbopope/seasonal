@@ -168,7 +168,14 @@
         ];
 
         function getState() {
-            return history.state;
+            if (history.state) {
+                return history.state;
+            } else if (window.location.hash !== '') {
+                let hash = window.location.hash.substring(1).split('-');
+                return {location: hash[0], month: hash[1]};
+            } else {
+                return undefined;
+            }
         }
 
         function pushState(location, month) {
@@ -178,7 +185,6 @@
         }
 
         function replaceState(location, month) {
-            console.log(`Setting current state to ${JSON.stringify({location, month})}`)
             const hash = `${location}-${month}`;
             history.replaceState({location, month}, null, `#${hash}`);
         }
@@ -214,19 +220,20 @@
             `;
         }
 
-        function renderMonth(location, month) {
+        function renderMonth() {
+            let state = getState();
             let foodList = '';
             var foods = _.pickBy(data, food => {
-                var availability = food[location][month];
+                var availability = food[state.location][state.month];
                 return availability == 'fresh' || availability == 'stored';
             });
             for (var foodID in foods) {
-                foodList += food(foodID, location);
+                foodList += food(foodID, state.location);
             }
 
             $('#food-container').html(`
-                <div id="${month}" class="col s12">
-                    <h1>${capitalizeFirstLetter(month)}</h1>
+                <div id="${state.month}" class="col s12">
+                    <h1>${capitalizeFirstLetter(state.month)}</h1>
                     <ul class="collapsible" data-collapsible="accordion">${foodList}</ul>
                 </div>
             `);
@@ -282,20 +289,17 @@
         }
 
         window.addEventListener('popstate', function(event) {
-            let state = getState();
-            console.log(`popstate with state ${JSON.stringify(state)}`);
-            renderMonth(state.month);
+            renderMonth();
         }, false);
 
         $(document).ready(function() {
             var state = getState();
-            console.log(`Loaded window with state ${JSON.stringify(state)}`);
 
             const currentMonth = months[(new Date()).getMonth()].toLowerCase();
             let location = state ? (state.location || 'germany') : 'germany'; // TODO: Get location from IP address
             let month    = state ? (state.month || currentMonth) : currentMonth;
 
-            // replaceState(location, month);
+            replaceState(location, month);
 
             $(`#month-select option[value=${month}]`).prop('selected', true)
             $(`#location-select option[value=${location}]`).prop('selected', true)
@@ -303,15 +307,17 @@
 
             $('#month-select').change(function() {
                 let month = $(this).val();
-                renderMonth(location, month);
+                pushState(location, month);
+                renderMonth();
             });
 
             $('#location-select').change(function() {
                 let location = $(this).val();
-                renderMonth(location, month);
+                pushState(location, month);
+                renderMonth();
             });
 
-            renderMonth(location, month);
+            renderMonth();
         });
     </script>
 
